@@ -6,9 +6,21 @@ use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::Level;
+use dotenvy::dotenv;
+use std::env;
+use sqlx::PgPool;
+use sqlx::migrate::Migrator;
+
+static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPool::connect(&database_url).await.unwrap();
+    MIGRATOR.run(&pool).await.unwrap();
+
     tracing_subscriber::fmt()
         .with_target(false)
         .compact()

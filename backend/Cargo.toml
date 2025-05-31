@@ -14,3 +14,6 @@ chrono = "0.4.41"
 tower-http = { version = "0.6.4", features = [ "cors", "trace" ] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = [ "env-filter" ]}
+sqlx = { version = "0.8.6", features = [ "postgres", "runtime-tokio-rustls", "macros" ]}
+dotenvy = "0.15.7"
+uuid = { version = "1.17.0", features = [ "v4", "v7" ]}
