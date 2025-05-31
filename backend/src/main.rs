@@ -3,10 +3,17 @@ mod router;
 use std::io::Error;
 use std::net::{ Ipv4Addr, SocketAddr };
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let router = router::create_router();
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    let router = router::create_router()
+        .layer(cors);
 
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
     let listener = TcpListener::bind(&address).await?;
