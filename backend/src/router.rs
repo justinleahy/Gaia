@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use axum::{Json, Router};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -7,6 +8,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_swagger_ui::SwaggerUi;
 use serde::Serialize;
+use sqlx::PgPool;
 
 #[derive(Serialize, ToSchema)]
 struct Health {
@@ -16,7 +18,7 @@ struct Health {
 
 #[utoipa::path(
     get,
-    path = "/api/health",
+    path = "/api/v1/health",
     tag = "Health",
     responses(
         (status = 200, description = "Returns server's current time and status for basic availability monitoring.", body = Health)
@@ -30,12 +32,13 @@ pub async fn health() -> impl IntoResponse {
     (StatusCode::OK, Json(health))
 }
 
-pub fn create_router() -> Router {
+pub fn create_router(pool: Arc<PgPool>) -> Router {
     #[derive(OpenApi)]
     #[openapi()]
     struct ApiDoc;
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .nest("/api/v1/users", crate::routes::user_routes::router(pool.clone()))
         .routes(routes!(health))
         .split_for_parts();
 

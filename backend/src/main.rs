@@ -1,4 +1,6 @@
 mod router;
+mod models;
+mod routes;
 
 use std::io::Error;
 use std::net::{ Ipv4Addr, SocketAddr };
@@ -31,7 +33,7 @@ async fn main() -> Result<(), Error> {
         .allow_methods(Any)
         .allow_headers(Any);
 
-    let router = router::create_router()
+    let router = router::create_router(pool.clone().into())
         .layer(cors)
         .layer(
             TraceLayer::new_for_http()
