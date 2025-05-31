@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "gaia"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,6 +9,8 @@ tokio = { version = "1.45.1", features = ["full"]}
 utoipa = { version = "5.3.1", features = [ "axum_extras" ] }
 utoipa-swagger-ui = { version = "9.0.2", features = [ "axum" ]}
 utoipa-axum = "0.2.0"
+serde = { version = "1.0.219", features = ["derive"] }
+chrono = "0.4.41"
 
 [dev-dependencies]
 tower = "0.5.2"
