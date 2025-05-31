@@ -40,7 +40,8 @@ const HealthCheck: React.FC = () => {
         };
 
         fetchHealth();
-        const interval = setInterval(fetchHealth, 1000);
+        // Refresh every minute
+        const interval = setInterval(fetchHealth, 60000);
         return () => clearInterval(interval);
     }, []);
 
