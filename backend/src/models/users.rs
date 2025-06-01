@@ -12,19 +12,14 @@ pub struct User {
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct PostUser {
+pub struct PostUserRequest {
     pub username: String,
     pub password: String,
     pub email: String
 }
 
-#[derive(Deserialize, ToSchema)]
-pub struct GetUser {
-    pub id: Uuid
-}
-
 #[derive(Deserialize)]
-pub struct PatchUser {
+pub struct PatchUserRequest {
     pub username: Option<String>,
     pub password: Option<String>,
     pub email: Option<String>

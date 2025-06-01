@@ -19,9 +19,9 @@ static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 async fn main() -> Result<(), Error> {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("`DATABASE_URL` should be set");
     let pool = PgPool::connect(&database_url).await.unwrap();
-    MIGRATOR.run(&pool).await.unwrap();
+    MIGRATOR.run(&pool).await.expect("Failed running migrations");
 
     tracing_subscriber::fmt()
         .with_target(false)

@@ -9,7 +9,7 @@ use sqlx::PgPool;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use uuid::Uuid;
-use crate::models::{GetUser, PostUser, User};
+use crate::models::{PostUserRequest, User};
 
 
 pub(crate) fn router(pool: Arc<PgPool>) -> OpenApiRouter {
@@ -29,7 +29,7 @@ pub(crate) fn router(pool: Arc<PgPool>) -> OpenApiRouter {
 )]
 async fn post_user(
     State(pool): State<Arc<PgPool>>,
-    Json(payload): Json<PostUser>,
+    Json(payload): Json<PostUserRequest>,
 ) -> Result<(StatusCode, Json<User>), (StatusCode, String)> {
     let salt = SaltString::generate(&mut OsRng);
 
@@ -56,8 +56,11 @@ async fn post_user(
 
 #[utoipa::path(
     get,
-    path = "",
+    path = "/{user_id}",
     tag = "User",
+    params(
+        ("user_id" = Uuid, Path, description = "Users UUID")
+    ),
     responses(
         (status = 200, description = "User found successfully", body = User),
         (status = 404, description = "User not found")
@@ -65,12 +68,12 @@ async fn post_user(
 )]
 async fn get_user(
     State(pool): State<Arc<PgPool>>,
-    Json(payload): Json<GetUser>
+    axum::extract::Path(user_id): axum::extract::Path<Uuid>
 ) -> Result<(StatusCode, Json<User>), (StatusCode, String)> {
     let user = sqlx::query_as!(
         User,
         r#"SELECT * FROM users WHERE id = $1"#,
-        payload.id
+        user_id
     )
         .fetch_one(&*pool)
         .await

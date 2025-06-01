@@ -24,7 +24,7 @@ struct Health {
         (status = 200, description = "Returns server's current time and status for basic availability monitoring.", body = Health)
     )
 )]
-pub async fn health() -> impl IntoResponse {
+async fn health() -> impl IntoResponse {
     let health = Health {
         current_time: Utc::now().to_rfc3339()
     };
