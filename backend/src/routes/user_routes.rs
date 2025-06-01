@@ -42,7 +42,7 @@ async fn post_user(
         r#"INSERT INTO users (id, username, password, email)
            VALUES ($1, $2, $3, $4)
            RETURNING id, username, password, email"#,
-        Uuid::new_v4(),
+        Uuid::now_v7(),
         payload.username,
         password_hash,
         payload.email
