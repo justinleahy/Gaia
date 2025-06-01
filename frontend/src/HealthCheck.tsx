@@ -27,7 +27,7 @@ const HealthCheck: React.FC = () => {
     useEffect(() => {
         const fetchHealth = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/health');
+                const response = await fetch('http://localhost:8080/api/v1/health');
                 if(!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
