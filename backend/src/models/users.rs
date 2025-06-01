@@ -8,19 +8,25 @@ pub struct User {
     pub username: String,
     #[serde(skip_serializing)]
     pub password: String,
-    pub email: String
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct PutUserRequest {
+    pub username: String,
+    pub password: String,
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct PostUserRequest {
-    pub username: String,
-    pub password: String,
-    pub email: String
-}
-
-#[derive(Deserialize)]
-pub struct PatchUserRequest {
     pub username: Option<String>,
     pub password: Option<String>,
-    pub email: Option<String>
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>
 }

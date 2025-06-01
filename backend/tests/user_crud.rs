@@ -32,20 +32,22 @@ async fn setup_test_app() -> Router {
 }
 
 #[tokio::test]
-async fn test_post_user() {
+async fn test_put_user() {
     let app = setup_test_app().await;
 
     let payload = json!({
-        "username": "posttestuser",
+        "username": "puttestuser",
         "password": "testpass",
-        "email": "posttest@example.com"
+        "email": "puttest@example.com",
+        "first_name": "Put",
+        "last_name": "Test"
     });
 
     let response = app
         .clone()
         .oneshot(
             Request::builder()
-                .method("POST")
+                .method("PUT")
                 .uri("/api/v1/users")
                 .header("Content-Type", "application/json")
                 .body(Body::from(payload.to_string()))
@@ -64,14 +66,16 @@ async fn test_get_user() {
     let payload = json!({
         "username": "gettestuser",
         "password": "testpass",
-        "email": "gettest@example.com"
+        "email": "gettest@example.com",
+        "first_name": "Get",
+        "last_name": "Test"
     });
 
     let post_response = app
         .clone()
         .oneshot(
             Request::builder()
-                .method("POST")
+                .method("PUT")
                 .uri("/api/v1/users")
                 .header("Content-Type", "application/json")
                 .body(Body::from(payload.to_string()))

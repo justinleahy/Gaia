@@ -9,17 +9,17 @@ use sqlx::PgPool;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use uuid::Uuid;
-use crate::models::{PostUserRequest, User};
+use crate::models::{PutUserRequest, PostUserRequest, User};
 
 
 pub(crate) fn router(pool: Arc<PgPool>) -> OpenApiRouter {
     OpenApiRouter::new()
-        .routes(routes!(post_user, get_user))
+        .routes(routes!(put_user, get_user, post_user))
         .with_state(pool)
 }
 
 #[utoipa::path(
-    post,
+    put,
     path = "",
     tag = "User",
     responses(
@@ -27,9 +27,9 @@ pub(crate) fn router(pool: Arc<PgPool>) -> OpenApiRouter {
         (status = 500, description = "User failed to be created")
     )
 )]
-async fn post_user(
+async fn put_user(
     State(pool): State<Arc<PgPool>>,
-    Json(payload): Json<PostUserRequest>,
+    Json(payload): Json<PutUserRequest>,
 ) -> Result<(StatusCode, Json<User>), (StatusCode, String)> {
     let salt = SaltString::generate(&mut OsRng);
 
@@ -39,13 +39,15 @@ async fn post_user(
 
     let user = sqlx::query_as!(
         User,
-        r#"INSERT INTO users (id, username, password, email)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id, username, password, email"#,
+        r#"INSERT INTO users (id, username, password, email, first_name, last_name)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING id, username, password, email, first_name, last_name"#,
         Uuid::now_v7(),
         payload.username,
         password_hash,
-        payload.email
+        payload.email,
+        payload.first_name,
+        payload.last_name
     )
         .fetch_one(&*pool)
         .await
