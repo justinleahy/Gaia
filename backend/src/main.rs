@@ -12,6 +12,7 @@ use dotenvy::dotenv;
 use std::env;
 use sqlx::PgPool;
 use sqlx::migrate::Migrator;
+use tokio::signal::unix;
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
@@ -62,7 +63,7 @@ async fn shutdown_signal() {
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
+        unix::signal(unix::SignalKind::terminate())
             .expect("failed to install signal handler")
             .recv()
             .await;
