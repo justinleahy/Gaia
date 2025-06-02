@@ -83,3 +83,75 @@ async fn get_user(
 
     Ok((StatusCode::OK, Json(user)))
 }
+
+#[utoipa::path(
+    post,
+    path = "/{user_id}",
+    tag = "User",
+    params(
+        ("user_id" = Uuid, Path, description = "Users UUID")
+    ),
+    responses(
+        (status = 200, description = "User successfully updated"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "User failed to be updated")
+    )
+)]
+async fn post_user(
+    State(pool): State<Arc<PgPool>>,
+    axum::extract::Path(user_id): axum::extract::Path<Uuid>,
+    Json(payload): Json<PostUserRequest>
+) -> Result<StatusCode, (StatusCode, String)>{
+    let mut updates = Vec::new();
+    let mut params: Vec<(String, sqlx::types::Json<String>)> = Vec::new();
+
+    // Hash password if being updated
+    let hashed_password = if let Some(pwd) = &payload.password {
+        let salt = SaltString::generate(&mut OsRng);
+
+        let argon2 = Argon2::default();
+
+        let password_hash = argon2.hash_password(pwd.as_bytes(), &salt).unwrap().to_string();
+        Some(password_hash)
+    } else {
+        None
+    };
+
+    if let Some(username) = &payload.username {
+        updates.push("username = $1");
+        params.push(("username".to_string(), sqlx::types::Json(username.clone())));
+    }
+    if let Some(email) = &payload.email {
+        updates.push("email = $2");
+        params.push(("email".to_string(), sqlx::types::Json(email.clone())));
+    }
+    if let Some(pwd) = hashed_password {
+        updates.push("password = $3");
+        params.push(("password".to_string(), sqlx::types::Json(pwd)));
+    }
+
+    if updates.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "No fields to update.".into()));
+    }
+
+    // Build SQL dynamically
+    let query = format!("UPDATE users SET {} WHERE id = ${}",
+                            updates.join(", "), updates.len() + 1);
+
+    // Build arguments tuple
+    let mut query_builder = sqlx::query(&query);
+
+    for (_key, value) in &params {
+        query_builder = query_builder.bind(&value.0);
+    }
+    query_builder = query_builder.bind(user_id);
+
+    // Execute update
+    let result = query_builder.execute(&*pool).await;
+
+    match result {
+        Ok(r) if r.rows_affected() > 0 => Ok(StatusCode::OK),
+        Ok(_) => Err((StatusCode::NOT_FOUND, "User not found.".into())),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    }
+}
