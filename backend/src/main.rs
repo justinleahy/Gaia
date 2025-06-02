@@ -12,6 +12,7 @@ use dotenvy::dotenv;
 use std::env;
 use sqlx::PgPool;
 use sqlx::migrate::Migrator;
+#[cfg(unix)]
 use tokio::signal::unix;
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
