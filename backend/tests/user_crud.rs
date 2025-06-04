@@ -9,7 +9,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower::ServiceExt;
 use sqlx::migrate::Migrator;
 use sqlx::PgPool;
-
+use utoipa::openapi::HttpMethod::Post;
 use gaia::router::create_router;
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
@@ -71,7 +71,7 @@ async fn test_get_user() {
         "last_name": "Test"
     });
 
-    let post_response = app
+    let put_response = app
         .clone()
         .oneshot(
             Request::builder()
@@ -84,9 +84,9 @@ async fn test_get_user() {
         .await
         .unwrap();
 
-    assert_eq!(post_response.status(), StatusCode::CREATED);
+    assert_eq!(put_response.status(), StatusCode::CREATED);
 
-    let body = to_bytes(post_response.into_body(), 1000).await.unwrap();
+    let body = to_bytes(put_response.into_body(), 1000).await.unwrap();
     let response_data: serde_json::Value = serde_json::from_slice(&body).unwrap();
     let user_id = response_data["id"].as_str().unwrap();
 
@@ -125,7 +125,7 @@ async fn test_post_user() {
         "last_name": "Post"
     });
 
-    let post_response = app
+    let put_response = app
         .clone()
         .oneshot(
             Request::builder()
@@ -138,13 +138,30 @@ async fn test_post_user() {
         .await
         .unwrap();
 
-    assert_eq!(post_response.status(), StatusCode::CREATED);
+    assert_eq!(put_response.status(), StatusCode::CREATED);
 
-    let body = to_bytes(post_response.into_body(), 1000).await.unwrap();
+    let body = to_bytes(put_response.into_body(), 1000).await.unwrap();
     let response_data: serde_json::Value = serde_json::from_slice(&body).unwrap();
     let user_id = response_data["id"].as_str().unwrap();
 
+    let post_payload = json!({
+        "last_name": "User"
+    });
 
+    let post_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/users/{}", user_id))
+                .header("Content-Type", "application/json")
+                .body(Body::from(post_payload.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(post_response.status(), StatusCode::OK);
 
     let get_response = app
         .clone()
@@ -164,7 +181,9 @@ async fn test_post_user() {
     let user: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(user["id"], user_id);
-    assert_eq!(user["username"], "gettestuser");
-    assert_eq!(user["email"], "gettest@example.com");
+    assert_eq!(user["username"], "posttestuser");
+    assert_eq!(user["email"], "posttest@example.com");
+    assert_eq!(user["first_name"], "Post");
+    assert_eq!(user["last_name"], "User");
     assert!(!user.as_object().unwrap().contains_key("password"))
 }

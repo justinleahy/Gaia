@@ -103,7 +103,7 @@ async fn post_user(
     Json(payload): Json<PostUserRequest>
 ) -> Result<StatusCode, (StatusCode, String)>{
     let mut updates = Vec::new();
-    let mut params: Vec<(String, sqlx::types::Json<String>)> = Vec::new();
+    let mut params = Vec::new();
 
     // Hash password if being updated
     let hashed_password = if let Some(pwd) = &payload.password {
@@ -118,36 +118,52 @@ async fn post_user(
     };
 
     if let Some(username) = &payload.username {
-        updates.push("username = $1");
-        params.push(("username".to_string(), sqlx::types::Json(username.clone())));
+        updates.push(format!("username = ${}", params.len() + 1));
+        params.push(username.clone());
     }
     if let Some(email) = &payload.email {
-        updates.push("email = $2");
-        params.push(("email".to_string(), sqlx::types::Json(email.clone())));
+        updates.push(format!("email = ${}", params.len() + 1));
+        params.push(email.clone());
     }
     if let Some(pwd) = hashed_password {
-        updates.push("password = $3");
-        params.push(("password".to_string(), sqlx::types::Json(pwd)));
+        updates.push(format!("password = ${}", params.len() + 1));
+        params.push(pwd);
+    }
+    if let Some(first_name) = &payload.first_name {
+        updates.push(format!("first_name = ${}", params.len() + 1));
+        params.push(first_name.clone());
+    }
+    if let Some(last_name) = &payload.last_name {
+        updates.push(format!("last_name = ${}", params.len() + 1));
+        params.push(last_name.clone());
     }
 
     if updates.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "No fields to update.".into()));
     }
 
-    // Build SQL dynamically
+
+    if updates.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "No fields to update.".into()));
+    }
+
     let query = format!("UPDATE users SET {} WHERE id = ${}",
-                            updates.join(", "), updates.len() + 1);
+                        updates.join(", "),
+                        params.len() + 1
+    );
 
     // Build arguments tuple
     let mut query_builder = sqlx::query(&query);
 
-    for (_key, value) in &params {
-        query_builder = query_builder.bind(&value.0);
+    // Bind all parameters in order
+    for param in &params {
+        query_builder = query_builder.bind(param);
     }
     query_builder = query_builder.bind(user_id);
 
     // Execute update
     let result = query_builder.execute(&*pool).await;
+
 
     match result {
         Ok(r) if r.rows_affected() > 0 => Ok(StatusCode::OK),
